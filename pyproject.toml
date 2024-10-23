@@ -1,0 +1,19 @@
+[project]
+name = "GPT-SoVITS-Emotion-Manager"
+version = "0.1.0"
+description = "GPT-SoVITS-Emotion-Manager"
+authors = [
+    {name = "zhaomaoniu", email = "2667292003@qq.com"},
+]
+dependencies = [
+    "google-generativeai>=0.8.3",
+    "pyyaml>=6.0.2",
+    "loguru>=0.7.2",
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false

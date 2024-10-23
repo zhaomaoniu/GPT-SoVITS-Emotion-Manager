@@ -1,0 +1,6 @@
+log_level: "info"
+
+tagger:
+  model: "gemini-1.5-flash"
+  api_key: "your_api_key"
+  proxy: "" # e.g. "http://127.0.0.1:7890"
