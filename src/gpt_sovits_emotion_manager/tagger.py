@@ -7,8 +7,9 @@ from pathlib import Path
 import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
-from .log import logger
-from .config import TaggerConfig
+from .log import log
+from .config import Config
+from .utils import get_audio_duration
 from .models import ListFileAnnotation, EmotionAnnotation, Emotion
 
 
@@ -51,21 +52,21 @@ _prompt = """
 
 
 class Tagger:
-    def __init__(self, config: TaggerConfig) -> None:
+    def __init__(self, config: Config) -> None:
         """初始化情感标注器
 
         Args:
-            config (TaggerConfig): 配置对象
+            config (Config): 配置对象
         """
-        genai.configure(api_key=config.api_key)
+        genai.configure(api_key=config.llm.api_key)
 
-        if config.proxy:
+        if config.llm.proxy:
             # 因为 `google.genrativeai` 底层使用 `gRPC` 通信，所以只能通过环境变量设置代理
-            os.environ["HTTP_PROXY"] = config.proxy
-            os.environ["HTTPS_PROXY"] = config.proxy
+            os.environ["HTTP_PROXY"] = config.llm.proxy
+            os.environ["HTTPS_PROXY"] = config.llm.proxy
 
         self.model = genai.GenerativeModel(
-            model_name=config.model,
+            model_name=config.llm.model,
             safety_settings={
                 HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -137,10 +138,16 @@ class Tagger:
                     return await self._tag(batch)
                 except Exception as e:
                     cnt += 1
-                    logger.warning(f"Occurred error, retrying({cnt}/{retry}): {e}")
-            logger.error(f"Failed to process batch with start line: {batch[0].text}")
+                    log(
+                        "WARNING",
+                        f"Occurred error, retrying(<c>{cnt}/{retry}</c>): {e}",
+                    )
+            log(
+                "ERROR",
+                f"Failed to process batch with start line: <b>{batch[0].text}</b>",
+            )
             prompt = _prompt + "\n".join([self._generate_input(item) for item in batch])
-            logger.debug(f"Prompt: {prompt}\n")
+            log("DEBUG", f"Prompt: {prompt}\n")
             return []
 
         # 分批处理
@@ -183,7 +190,10 @@ class Tagger:
             + "\n".join([self._generate_input(a) for a in list_file_annotation])
         )
 
-        logger.info(f"Requesting Gemini with prompt: {prompt[len(_prompt): len(_prompt) + 100].strip()}...")
+        log(
+            "INFO",
+            f"Requesting Gemini:\n<dim>{prompt[len(_prompt): len(_prompt) + 100].strip()}...</dim>",
+        )
 
         result = await self.model.generate_content_async(prompt)
         text = result.text
@@ -230,10 +240,23 @@ class Tagger:
 
             annotations.append(
                 EmotionAnnotation(
-                    file=file,
+                    file=a.path,
                     text=a.text,
                     language=a.language,
                     emotions=emotions,
                 )
             )
         return annotations
+
+    def check_duration(
+        self, annotations: List[EmotionAnnotation]
+    ) -> List[EmotionAnnotation]:
+        """检查音频时长
+
+        Args:
+            annotations (List[EmotionAnnotation]): 情感标注列表
+
+        Returns:
+            List[EmotionAnnotation]: 情感标注列表
+        """
+        return [a for a in annotations if 3 <= get_audio_duration(a.file) <= 10]

@@ -11,8 +11,8 @@ class Emotion:
         "sadness",  # 悲伤
         "disgust",  # 厌恶
         "anger",  # 愤怒
-        "neutral"  # 中性
-        "confusion"  # 困惑
+        "neutral",  # 中性
+        "confusion",  # 困惑
     ]
     intensity: Literal["low", "moderate", "high"]
 

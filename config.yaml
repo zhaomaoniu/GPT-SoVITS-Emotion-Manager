@@ -1,6 +1,49 @@
-log_level: "info"
+log_level: info
+# 日志等级，可选项：debug, info, warning, error, critical
+
+inference:
+  # 推理模型配置
+
+  base_url: http://127.0.0.1:9880
+  # GPT-SoVITS/api_v2.py 的地址，如果你没有修改端口，不需要修改这个配置
+  use_aux_ref: true
+  # 是否使用辅助参考音频。开启此项会在推理时使用多个辅助参考音频（如果有足够的数量），提高推理语气的稳定性
+  max_aux_refs: 50
+  # 最大辅助参考音频数量。过多的辅助参考音频会导致推理速度严重下降
+  top_k: 15
+  # 生成时的 top_k 参数。WebUI 中的 top_k 默认是 15，但 API 推理时默认是 5。个人认为 15 的效果好一点
+  top_p: 1.0
+  # 生成时的 top_p 参数
+  temperature: 1.0
+  # 生成时的 temperature 参数
+  text_split_method: cut0
+  # 文本切割方式。cut0: 不切, cut1: 凑四句一切, cut2: 凑50字一切, cut3: 按中文句号。切, cut4: 按英文句号.切, cut5: 按标点符号切
+  parallel_infer: true
+  # 是否开启并行推理。开启后会提高推理速度
+  media_type: wav
+  # 推理音频的格式。支持 `wav`, `raw`, `ogg`, `aac`
+  batch_size: 1
+  batch_threshold: 0.75
+  split_bucket: true
+  speed_factor: 1.0
+  fragment_interval: 0.3
+  streaming_mode: false
+  seed: -1
+  repetition_penalty: 1.35
 
 tagger:
-  model: "gemini-1.5-flash"
-  api_key: "your_api_key"
-  proxy: "" # e.g. "http://127.0.0.1:7890"
+  # 情感标注模型配置
+
+  check_duration: true
+  # 是否检查音频时长。开启后会检查音频时长，如果时长不在 3-10 秒之间会被筛除
+  # 注意：请确保 .list 文件中的路径是本机路径，否则会导致时长检查失败
+
+llm:
+  # 大语言模型配置
+
+  model: gemini-1.5-flash
+  # 情感标注模型的名称，可选项：gemini-1.5-flash, gemini-1.5-pro
+  api_key: your_api_key
+  # 使用 Google AI Studio 的 API Key。可到 https://aistudio.google.com/app/apikey 获取
+  proxy: http://127.0.0.1:7890
+  # 代理地址，`null` 表示不使用代理
