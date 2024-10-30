@@ -56,7 +56,7 @@ llm:
 
   model: gemini-1.5-flash
   # 情感标注模型的名称，可选项：gemini-1.5-flash, gemini-1.5-pro
-  api_key: AIzaSyAm3IE4sD3vmv1FRVYJzLEU-qD1l3R1P3I
+  api_key: your_api_key
   # 使用 Google AI Studio 的 API Key。可到 https://aistudio.google.com/app/apikey 获取
   proxy: http://127.0.0.1:7890
   # 代理地址，`null` 表示不使用代理
