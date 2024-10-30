@@ -12,14 +12,14 @@ from src.gpt_sovits_emotion_manager.log import setup_logger, log
 from src.gpt_sovits_emotion_manager.models import EmotionAnnotation, Emotion
 
 
-def log_prompt():
+def log_prompt(emotion_types: str):
     log(
         "INFO",
         "Emotions should be in the format of `<y>type</y>:<magenta>intensity</magenta>`.",
     )
     log(
         "INFO",
-        "Valid types: <y>joy, fear, surprise, sadness, disgust, anger, neutral, confusion</y>",
+        f"Valid types: <y>{emotion_types}</y>",
     )
     log(
         "INFO",
@@ -73,9 +73,9 @@ async def main(file_path: Path):
                 except Exception as e:
                     log(
                         "WARNING",
-                        "Failed to infer emotions by LLM, using default emotion: neutral:low",
+                        f"Failed to infer emotions by LLM, using default emotion: {config.emotion_types[0]}:low",
                     )
-                    emotions = [Emotion(type="neutral", intensity="low")]
+                    emotions = [Emotion(type=config.emotion_types[0], intensity="low")]
                 break
             else:
                 try:
@@ -92,16 +92,7 @@ async def main(file_path: Path):
                 # check if all emotions are valid
                 if not all(
                     emotion.type
-                    in {
-                        "joy",
-                        "fear",
-                        "surprise",
-                        "sadness",
-                        "disgust",
-                        "anger",
-                        "neutral",
-                        "confusion",
-                    }
+                    in config.emotion_types
                     and emotion.intensity in {"low", "moderate", "high"}
                     for emotion in emotions
                 ):
