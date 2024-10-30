@@ -120,7 +120,7 @@ class Inferer:
         if len(aux_ref_path) > self.config.max_aux_refs:
             aux_ref_path = random.sample(aux_ref_path, self.config.max_aux_refs)
 
-        if aux_ref_path:
+        if self.config.use_aux_ref:
             log("INFO", f"Using {len(aux_ref_path)} auxiliary references")
 
         wav_file = await generate(
