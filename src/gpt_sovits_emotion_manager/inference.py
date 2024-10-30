@@ -27,7 +27,7 @@ _prompt = """
 示例返回:
 ```json
 [
-    {"type": "joy", "intensity": "moderate"}
+    {{"type": "joy", "intensity": "moderate"}}
 ]
 ```
 
@@ -163,7 +163,7 @@ class Inferer:
             List[Emotion]: 从文本中生成的情感
         """
         response = await self.model.generate_content_async(
-            _prompt.format(", ".join(self.config.emotion_types)) + text
+            _prompt.format(emotion_types=", ".join(self.config.emotion_types)) + text
         )
         json_str = re.sub(r"```json|```", "", response.text).strip()
         data = json.loads(json_str)
@@ -172,23 +172,13 @@ class Inferer:
             if (
                 "type" in item
                 and "intensity" in item
-                and item["type"]
-                in {
-                    "joy",
-                    "fear",
-                    "surprise",
-                    "sadness",
-                    "disgust",
-                    "anger",
-                    "neutral",
-                    "confusion",
-                }
+                and item["type"] in self.config.emotion_types
                 and item["intensity"] in {"low", "moderate", "high"}
             ):
                 emotions.append(Emotion(**item))
         if not emotions:
             log("WARNING", "No emotion found in the text, using default emotion")
-            emotions = [Emotion(type="neutral", intensity="low")]
+            emotions = [Emotion(type=self.config.emotion_types[0], intensity="low")]
         return emotions
 
     def _find_emotion_annotations(
@@ -229,7 +219,7 @@ class Inferer:
             if match_score < best_match_score:
                 best_match_score = match_score
                 best_matches = [item]
-            else:
+            elif match_score == best_match_score:
                 best_matches.append(item)
 
         return best_matches

@@ -21,23 +21,23 @@ _prompt = """
 
 输出格式:
 ```json
-{
+{{
     "标识符1": [
-        {
+        {{
             "type": "情感标签, 可选项有: {emotion_types}",
-            "intensity": "情感强度, 可选项有: `low`, `moderate`, `high`"
-        },
+            "intensity": "情感强度, 可选项有: low, moderate, high"
+        }},
         ...
     ],
     "标识符2": [
-        {
+        {{
             "type": "情感标签",
             "intensity": "情感强度"
-        },
+        }},
         ...
     ],
     ...
-}
+}}
 ```
 
 请注意:
@@ -140,13 +140,15 @@ class Tagger:
                     cnt += 1
                     log(
                         "WARNING",
-                        f"Occurred error, retrying(<c>{cnt}/{retry}</c>): {e}",
+                        f"Occurred error, retrying(<c>{cnt}/{retry}</c>): {type(e).__name__}: {str(e)}",
                     )
             log(
                 "ERROR",
                 f"Failed to process batch with start line: <b>{batch[0].text}</b>",
             )
-            prompt = _prompt + "\n".join([self._generate_input(item) for item in batch])
+            prompt = _prompt.format(
+                emotion_types=", ".join(self.config.emotion_types)
+            ) + "\n".join([self._generate_input(item) for item in batch])
             log("DEBUG", f"Prompt: {prompt}\n")
             return []
 
@@ -184,19 +186,24 @@ class Tagger:
         Returns:
             List[EmotionAnnotation]: 情感标注列表
         """
+        prompt_ = _prompt.format(emotion_types=", ".join(self.config.emotion_types))
         prompt = (
-            _prompt.format(emotion_types=", ".join(self.config.emotion_types))
+            prompt_
             + "\n"
             + "\n".join([self._generate_input(a) for a in list_file_annotation])
         )
 
         log(
             "INFO",
-            f"Requesting Gemini:\n<dim>{prompt[len(_prompt): len(_prompt) + 100].strip()}...</dim>",
+            "Requesting Gemini:\n"
+            f"<dim>{prompt[len(prompt_): len(prompt_) + 100].strip()}...</dim>",
         )
 
         result = await self.model.generate_content_async(prompt)
         text = result.text
+        print("=" * 100)
+        print(text)
+        print("=" * 100)
         # 这里可能 ValueError，记得在外面处理
 
         text = re.sub(r"```json|```", "", text).strip()
