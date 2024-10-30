@@ -24,7 +24,7 @@ _prompt = """
 {
     "标识符1": [
         {
-            "type": "情感标签, 可选项有: `joy`, `fear`, `surprise`, `sadness`, `disgust`, `anger`, `neutral`, `confusion`",
+            "type": "情感标签, 可选项有: {emotion_types}",
             "intensity": "情感强度, 可选项有: `low`, `moderate`, `high`"
         },
         ...
@@ -45,7 +45,6 @@ _prompt = """
 - 文本有可能构成上下文，在这种情况下，你可以根据上下文来更准确地判断情感标签，否则请仅根据单行文本内容来判断。
 - 在单一情感无法准确标注时，请组合多种情感类型。
 - 请确保每个标识符都有对应的情感标签。
-- JSON 输出无需格式化，直接输出压缩后的 JSON 即可。
 
 文本：
 """.strip()
@@ -58,6 +57,7 @@ class Tagger:
         Args:
             config (Config): 配置对象
         """
+        self.config = config
         genai.configure(api_key=config.llm.api_key)
 
         if config.llm.proxy:
@@ -185,7 +185,7 @@ class Tagger:
             List[EmotionAnnotation]: 情感标注列表
         """
         prompt = (
-            _prompt
+            _prompt.format(emotion_types=", ".join(self.config.emotion_types))
             + "\n"
             + "\n".join([self._generate_input(a) for a in list_file_annotation])
         )
@@ -217,16 +217,7 @@ class Tagger:
 
             emotions = []
             for emotion in data[file]:
-                if emotion["type"] not in [
-                    "joy",
-                    "fear",
-                    "surprise",
-                    "sadness",
-                    "disgust",
-                    "anger",
-                    "neutral",
-                    "confusion",
-                ]:
+                if emotion["type"] not in self.config.emotion_types:
                     raise ValueError(f"Invalid emotion type: {emotion}")
                 if emotion["intensity"] not in ["low", "moderate", "high"]:
                     raise ValueError(f"Invalid emotion intensity: {emotion}")

@@ -1,5 +1,5 @@
 import yaml
-from typing import Literal
+from typing import Literal, List
 from dataclasses import dataclass
 
 
@@ -39,6 +39,7 @@ class LLMConfig:
 @dataclass
 class Config:
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    emotion_types: List[str]
     inference: InferenceConfig
     tagger: TaggerConfig
     llm: LLMConfig

@@ -1,6 +1,19 @@
 log_level: info
 # 日志等级，可选项：debug, info, warning, error, critical
 
+emotion_types:
+  # 情感类型配置
+
+  - joy
+  - fear
+  - surprise
+  - sadness
+  - anger
+  - disgust
+  - neutral
+  - confusion
+
+
 inference:
   # 推理模型配置
 

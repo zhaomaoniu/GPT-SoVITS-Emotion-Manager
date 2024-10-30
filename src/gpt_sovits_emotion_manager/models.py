@@ -4,16 +4,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Emotion:
-    type: Literal[
-        "joy",  # 喜悦
-        "fear",  # 恐惧
-        "surprise",  # 惊讶
-        "sadness",  # 悲伤
-        "disgust",  # 厌恶
-        "anger",  # 愤怒
-        "neutral",  # 中性
-        "confusion",  # 困惑
-    ]
+    type: str
     intensity: Literal["low", "moderate", "high"]
 
 

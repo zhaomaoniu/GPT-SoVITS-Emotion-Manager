@@ -17,7 +17,7 @@ _prompt = """
 你的任务是根据给定的文本生成对应的情绪标签。
 
 情感标签由情感类型和强度组成。
-情感类型包括: joy, fear, surprise, sadness, disgust, anger, neutral, confusion
+情感类型包括: {emotion_types}
 强度包括: low, moderate, high
 
 请注意，情感标签可能不止一个，因此你需要为每个文本生成一个或多个情感标签。
@@ -45,7 +45,7 @@ class Inferer:
             emotion_annotations (List[EmotionAnnotation]): 情感标注对象列表
             config (Config): 配置对象
         """
-        self.config = config.inference
+        self.config = config
         self.emotion_annotations = emotion_annotations
 
         genai.configure(api_key=config.llm.api_key)
@@ -85,9 +85,9 @@ class Inferer:
         if emotions is None:
             log(
                 "WARNING",
-                f"No emotions specified, using default emotion: neutral:low",
+                f"No emotions specified, using default emotion: {self.config.emotion_types[0]}:low",
             )
-            emotions = [Emotion(type="neutral", intensity="low")]
+            emotions = [Emotion(type=self.config.emotion_types[0], intensity="low")]
 
         emotion_annotations = self._find_emotion_annotations(emotions)
         ref_path = None
@@ -103,7 +103,7 @@ class Inferer:
             ref_path = self.emotion_annotations[0].file
             prompt_text = self.emotion_annotations[0].text
             prompt_language = self.emotion_annotations[0].language
-        elif len(emotion_annotations) == 1 and self.config.use_aux_ref:
+        elif len(emotion_annotations) == 1 and self.config.inference.use_aux_ref:
             log(
                 "WARNING",
                 f"Only one matched emotion annotation found, unable to use auxiliary reference",
@@ -117,34 +117,38 @@ class Inferer:
             prompt_text = emotion_annotations[0].text
             prompt_language = emotion_annotations[0].language
 
-        if len(aux_ref_path) > self.config.max_aux_refs:
-            aux_ref_path = random.sample(aux_ref_path, self.config.max_aux_refs)
+        if len(aux_ref_path) > self.config.inference.max_aux_refs:
+            aux_ref_path = random.sample(
+                aux_ref_path, self.config.inference.max_aux_refs
+            )
 
-        if self.config.use_aux_ref:
+        if self.config.inference.use_aux_ref:
             log("INFO", f"Using {len(aux_ref_path)} auxiliary references")
 
         wav_file = await generate(
-            base_url=self.config.base_url,
+            base_url=self.config.inference.base_url,
             text=text,
             text_lang=language,
             ref_audio_path=ref_path,
-            aux_ref_audio_paths=aux_ref_path if self.config.use_aux_ref else None,
+            aux_ref_audio_paths=(
+                aux_ref_path if self.config.inference.use_aux_ref else None
+            ),
             prompt_text=prompt_text,
             prompt_lang=prompt_language,
-            top_k=self.config.top_k,
-            top_p=self.config.top_p,
-            temperature=self.config.temperature,
-            text_split_method=self.config.text_split_method,
-            batch_size=self.config.batch_size,
-            batch_threshold=self.config.batch_threshold,
-            split_bucket=self.config.split_bucket,
-            speed_factor=self.config.speed_factor,
-            fragment_interval=self.config.fragment_interval,
-            streaming_mode=self.config.streaming_mode,
-            seed=self.config.seed,
-            parallel_infer=self.config.parallel_infer,
-            repetition_penalty=self.config.repetition_penalty,
-            media_type=self.config.media_type,
+            top_k=self.config.inference.top_k,
+            top_p=self.config.inference.top_p,
+            temperature=self.config.inference.temperature,
+            text_split_method=self.config.inference.text_split_method,
+            batch_size=self.config.inference.batch_size,
+            batch_threshold=self.config.inference.batch_threshold,
+            split_bucket=self.config.inference.split_bucket,
+            speed_factor=self.config.inference.speed_factor,
+            fragment_interval=self.config.inference.fragment_interval,
+            streaming_mode=self.config.inference.streaming_mode,
+            seed=self.config.inference.seed,
+            parallel_infer=self.config.inference.parallel_infer,
+            repetition_penalty=self.config.inference.repetition_penalty,
+            media_type=self.config.inference.media_type,
         )
 
         return wav_file
@@ -158,7 +162,9 @@ class Inferer:
         Returns:
             List[Emotion]: 从文本中生成的情感
         """
-        response = await self.model.generate_content_async(_prompt + text)
+        response = await self.model.generate_content_async(
+            _prompt.format(", ".join(self.config.emotion_types)) + text
+        )
         json_str = re.sub(r"```json|```", "", response.text).strip()
         data = json.loads(json_str)
         emotions = []
