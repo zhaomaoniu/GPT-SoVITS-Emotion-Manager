@@ -87,7 +87,7 @@ async def main(file_path: Path):
                     ]
                 except Exception as e:
                     log("ERROR", "Invalid emotions!")
-                    log_prompt()
+                    log_prompt(", ".join(config.emotion_types))
                     continue
                 # check if all emotions are valid
                 if not all(
@@ -97,7 +97,7 @@ async def main(file_path: Path):
                     for emotion in emotions
                 ):
                     log("ERROR", "Invalid emotions!")
-                    log_prompt()
+                    log_prompt(", ".join(config.emotion_types))
                 else:
                     break
 
